@@ -620,6 +620,7 @@ function createForm(dataObject) {
     });
     // Make an asynchronous call to the updateData function
     await updateData(formData);
+
   });
 
   form.appendChild(submitButton);
@@ -646,6 +647,7 @@ function updateData(formData) {
       .querySelector(".userdetailsform")
       ?.parentElement.parentElement.remove();
     localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
+    updateIHJVariablesinVF()
     interact({ type: "done", payload: null });
 
     resolve("");
