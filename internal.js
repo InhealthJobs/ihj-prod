@@ -751,7 +751,7 @@ function updateLocationCards(stateData) {
             .setLngLat([hospital.fields.Longitude, hospital.fields.Latitude])
             .setPopup(
               new mapboxgl.Popup().setHTML(
-                `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.URL}">Visit Site</a></span`
+                `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.fields["URL"]}">Visit Site</a></span`
               )
             ) // add popup
             .addTo(window[`map_gl_${index + 1}`]);
