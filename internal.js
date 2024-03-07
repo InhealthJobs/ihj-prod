@@ -1,15 +1,15 @@
-// <script data-version="production" src="https://cdn.jsdelivr.net/gh/zacsanter/inhealthjobs@main/inj--script-demo5.js" id="vfassistant"></script>
+const voiceflowProjectID = "658b530fbaf097cb1c85fb97"; //Production Internal
+const proxyAPIKey = "ihj-internal-prod"; // Internal Production
+const localStorageMsgs = "ihj-int-messages";
 
 const typingIndicator = document.getElementById("typing-indicator");
 const uniqueId = generateUniqueId();
 // const voiceflowRuntime = "general-runtime.voiceflow.com";
-const voiceflowRuntime = "ihj-proxy.replit.app";
+const voiceflowRuntime = "ihjproxy.replit.app";
 
 const voiceflowVersionID =
   document.getElementById("vfassistant").getAttribute("data-version") ||
   "production";
-const voiceflowProjectID = "658b530fbaf097cb1c85fb97"; //Production Internal
-const proxyAPIKey = "ihj-internal-prod"; // Internal Production
 
 // Function to remove quotation marks from a string
 function removeQuotes(string) {
@@ -21,7 +21,7 @@ const input = document.getElementById("user-input");
 const responseContainer = document.getElementById("response-container");
 const inputPlaceholder = document.getElementById("input-placeholder");
 const inputFieldContainer = document.getElementById("input-container");
-const savedMessages = localStorage.getItem("messages");
+const savedMessages = localStorage.getItem(localStorageMsgs);
 const chatContainer = document.getElementById("chat-container");
 const restartButton = document.getElementById("restart-button");
 const locationCards = document.getElementById("location-container");
@@ -35,7 +35,7 @@ var map_gl_1 = new mapboxgl.Map({ container: "map_1" }),
 var bounds_gl_1 = new mapboxgl.LngLatBounds(),
   bounds_gl_2 = new mapboxgl.LngLatBounds(),
   bounds_gl_3 = new mapboxgl.LngLatBounds();
-const assistantTag = "InHealth Jobs",
+const assistantTag = "Career Doc",
   userTag = "You";
 
 // (function () {
@@ -50,132 +50,121 @@ const assistantTag = "InHealth Jobs",
 //   }, 50); // The delay in milliseconds (500ms in this case)
 // })();
 
-function displayResponse(response) {
-  setTimeout(() => {
-    if (response) {
-      response.forEach((item, index, array) => {
-        if (item.type === "speak" || item.type === "text") {
-          // const taglineElement = document.createElement("div");
-          // taglineElement.classList.add("assistanttagline");
-          // taglineElement.textContent = "InHealth Jobs";
+async function displayResponse(response) {
+  if (!response || !response.length) {
+    return;
+  }
 
-          // chatWindow.appendChild(assistantTagLine);
+  for (let i = 0; i < response.length; i++) {
+    const item = response[i];
+    console.log(item.payload.delay);
+    // Wait for the specified delay before processing the item
+    await new Promise((resolve) =>
+      setTimeout(resolve, item.payload.delay || 250)
+    ); // Default delay of 250ms if not specified
 
-          // const assistantWrapper = document.createElement("div");
-          // assistantWrapper.classList.add("assistantwrapper");
+    if (item.type === "speak" || item.type === "text") {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message", "assistant");
 
-          // const assistantImage = document.createElement("div");
-          // assistantImage.classList.add("assistantimage");
-          // assistantWrapper.appendChild(assistantImage);
+      const paragraphs = item.payload.message.split("\n\n");
+      const wrappedMessage = paragraphs
+        .map((para) => `<p>${para}</p>`)
+        .join("");
 
-          const messageElement = document.createElement("div");
-          messageElement.classList.add("message", "assistant");
+      messageElement.innerHTML = wrappedMessage;
 
-          const paragraphs = item.payload.message.split("\n\n");
-          const wrappedMessage = paragraphs
-            .map((para) => `<p>${para}</p>`)
-            .join("");
+      addAssistantMsg(messageElement);
+    } else if (item.type === "choice") {
+      const buttonContainer = document.createElement("div");
+      buttonContainer.classList.add("buttoncontainer");
 
-          messageElement.innerHTML = wrappedMessage;
-
-          // assistantWrapper.appendChild(messageElement);
-          // chatWindow.appendChild(assistantWrapper);
-
-          addAssistantMsg(messageElement);
-        } else if (item.type === "choice") {
-          const buttonContainer = document.createElement("div");
-          buttonContainer.classList.add("buttoncontainer");
-
-          item.payload.buttons.forEach((button) => {
-            const buttonElement = document.createElement("button");
-            buttonElement.classList.add("assistant", "message", "button");
-            buttonElement.textContent = button.name;
-            buttonElement.dataset.key = button.request.type;
-            buttonElement.addEventListener("click", (event) => {
-              handleButtonClick(event);
-            });
-            buttonContainer.appendChild(buttonElement);
-          });
-          chatWindow.appendChild(buttonContainer);
-          localStorage.setItem("messages", chatWindow.innerHTML);
-        } else if (item.type === "visual") {
-          console.info("Image Step");
-
-          const imageElement = document.createElement("img");
-          imageElement.src = item.payload.image;
-          imageElement.alt = "Assistant Image";
-          imageElement.style.width = "100%";
-
-          addAssistantMsg(imageElement);
-
-          // chatWindow.appendChild(imageElement);
-        } else if (item.type === "upload_resume") {
-          const uppyElement = document.createElement("div");
-          uppyElement.id = "uppyElement";
-          uppyElement.style.flex = 1;
-          // uppyElement.classList.add("assistantwrapper");
-
-          // chatWindow.appendChild(assistantTagLine);
-          // chatWindow.appendChild(uppyElement);
-          addAssistantMsg(uppyElement);
-
-          uppy = new Uppy.Uppy({
-            autoProceed: true,
-            allowMultipleUploadBatches: false,
-            debug: false,
-            restrictions: {
-              allowedFileTypes: [".pdf"],
-            },
-          });
-          uppy
-            .use(Uppy.Dashboard, {
-              target: "#uppyElement",
-              inline: true,
-              proudlyDisplayPoweredByUppy: false,
-            })
-            .use(Uppy.XHRUpload, {
-              endpoint: "https://ihj-cv-parser.replit.app/extract_text",
-              fieldName: "file",
-            });
-          uppy.on("upload-success", async (file, response) => {
-            // Parse the response body as JSON
-            console.log(file);
-            console.log(response);
-            await updateVariable(
-              "resume",
-              response.body.text.replaceAll("\n", " ")
-            );
-            uppy.clearUploadedFiles();
-            uppy.close();
-            uppyElement.parentElement.parentElement.remove();
-            interact({ type: "done", payload: null });
-            // console.log(uppy);
-          });
-        } else if (item.type === "user_form") {
-          addAssistantMsg(createForm(item.payload));
-          // addAssistantMsg(element);
-        } else if (item.type === "custom_locations") {
-          // item.payload
-          updateLocationCards(item.payload);
-        }
-
-        // After processing the last item, check for the specific message
-        if (index === array.length - 1) {
-          checkAndDisplayLocationContainer();
-        }
+      item.payload.buttons.forEach((button) => {
+        const buttonElement = document.createElement("button");
+        buttonElement.classList.add("assistant", "message", "button");
+        buttonElement.textContent = button.name;
+        buttonElement.dataset.key = button.request.type;
+        buttonElement.addEventListener("click", (event) => {
+          handleButtonClick(event);
+        });
+        buttonContainer.appendChild(buttonElement);
       });
+      chatWindow.appendChild(buttonContainer);
+      localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
+    } else if (item.type === "visual") {
+      console.info("Image Step");
+
+      const imageElement = document.createElement("img");
+      imageElement.src = item.payload.image;
+      imageElement.alt = "Assistant Image";
+      imageElement.style.width = "100%";
+
+      addAssistantMsg(imageElement);
+
+      // chatWindow.appendChild(imageElement);
+    } else if (item.type === "upload_resume") {
+      const uppyElement = document.createElement("div");
+      uppyElement.id = "uppyElement";
+      uppyElement.style.flex = 1;
+      // uppyElement.classList.add("assistantwrapper");
+
+      // chatWindow.appendChild(assistantTagLine);
+      // chatWindow.appendChild(uppyElement);
+      addAssistantMsg(uppyElement);
+
+      uppy = new Uppy.Uppy({
+        autoProceed: true,
+        allowMultipleUploadBatches: false,
+        debug: false,
+        restrictions: {
+          allowedFileTypes: [".pdf"],
+        },
+      });
+      uppy
+        .use(Uppy.Dashboard, {
+          target: "#uppyElement",
+          inline: true,
+          proudlyDisplayPoweredByUppy: false,
+        })
+        .use(Uppy.XHRUpload, {
+          endpoint: "https://ihj-cv-parser.replit.app/extract_text",
+          fieldName: "file",
+        });
+      uppy.on("upload-success", async (file, response) => {
+        // Parse the response body as JSON
+        console.log(file);
+        console.log(response);
+        await updateVariable(
+          "resume",
+          response.body.text.replaceAll("\n", " ")
+        );
+        uppy.clearUploadedFiles();
+        uppy.close();
+        uppyElement.parentElement.parentElement.remove();
+        interact({ type: "done", payload: null });
+        // console.log(uppy);
+      });
+    } else if (item.type === "user_form") {
+      addAssistantMsg(createForm(item.payload));
+      // addAssistantMsg(element);
+    } else if (item.type === "custom_locations") {
+      // item.payload
+      updateLocationCards(item.payload);
+    } else if (item.type === "save_variables_ms") {
+      // console.log(item.payload);
+      await updateData(item.payload);
     }
+  }
 
-    typingIndicator.classList.add("hidden");
+  typingIndicator.classList.add("hidden");
 
-    window.requestAnimationFrame(() => {
-      setTimeout(() => {
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-      }, 100);
-    });
+  window.requestAnimationFrame(() => {
+    setTimeout(() => {
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }, 100);
+  });
 
-    responseContainer.style.opacity = "1";
-  }, 250);
+  responseContainer.style.opacity = "1";
 
   setTimeout(() => {
     input.disabled = false;
@@ -224,6 +213,38 @@ async function updateVariablesinVF() {
     .then((response) => console.log(response))
     .catch((err) => console.error(err));
 }
+
+async function updateIHJVariablesinVF() {
+  let data = localStorage.getItem("ihjMem");
+  if (!data) {
+    let ms_data = await $memberstackDom.getCurrentMember();
+    data = ms_data.data.customFields;
+  }
+  if (typeof data != "string") {
+    data = JSON.stringify(data);
+  }
+  // Prepare the options for the fetch request
+  const options = {
+    method: "PATCH",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "x-client-id": proxyAPIKey,
+    },
+    body: data.replaceAll("-", "_"),
+  };
+
+  // Make the fetch request to Voiceflow
+
+  await fetch(
+    `https://${voiceflowRuntime}/state/user/${uniqueId}/variables`,
+    options
+  )
+    .then((response) => response.json())
+    .then((response) => console.log(response))
+    .catch((err) => console.error(err));
+}
+
 function checkAndDisplayLocationContainer() {
   const assistantMessages = document.querySelectorAll(".message.assistant");
   assistantMessages.forEach((messageDiv) => {
@@ -250,7 +271,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
   // Set the runtime, version and API key for the Voiceflow Dialog API
 
   //   const chatWindow = document.getElementById("chat-window");
-
   // Only call interact('#launch#') if there are no saved messages
   if (!savedMessages) {
     interact("#launch#");
@@ -266,7 +286,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
   restartButton.addEventListener("click", () => {
     chatWindow.innerHTML = "";
-    localStorage.removeItem("messages");
+    localStorage.removeItem(localStorageMsgs);
 
     var locationContainer = document.getElementById("location-container");
     if (locationContainer) {
@@ -406,7 +426,11 @@ async function interact(action) {
       config: { tts: true, stripSSML: true },
       action: { type: "launch" },
     };
-    await updateVariablesinVF();
+    // await updateVariablesinVF();
+    await updateIHJVariablesinVF();
+    window.$memberstackDom.updateMemberJSON({
+      json: JSON.parse(localStorage.getItem("ihjMem")),
+    });
   }
 
   fetch(
@@ -440,39 +464,16 @@ async function interact(action) {
 }
 
 function handleButtonClick(event) {
-  // Log the button name as a user message
-  // const userMessageElement = document.createElement("div");
-
-  // const prevMessage = chatWindow.lastElementChild;
-  // if (!prevMessage || !prevMessage.classList.contains("user")) {
-  //   const userTaglineElement = document.createElement("div");
-  //   userTaglineElement.classList.add("usertagline");
-  //   userTaglineElement.textContent = "You";
-  //   chatWindow.appendChild(userTaglineElement);
-  // }
-
-  // const userWrapper = document.createElement("div");
-  // userWrapper.classList.add("userwrapper");
-
-  // const userImage = document.createElement("div");
-  // userImage.classList.add("userimage");
-  // userWrapper.appendChild(userImage);
-
-  // userMessageElement.classList.add("message", "user");
-  // userMessageElement.textContent = event.target.textContent;
-  // userWrapper.appendChild(userMessageElement);
-
-  // chatWindow.appendChild(userWrapper);
-
   addUserMsg(event.target.textContent);
-  //   let body = { request: { type: event.target.dataset.key } };
+  typingIndicator.classList.remove("hidden");
+  chatWindow.appendChild(typingIndicator);
+
   let body = {
     action: {
       type: event.target.dataset.key,
       payload: { label: event.target.textContent, actions: [] },
     },
   };
-  ('{"action":{"type":"path-vp1py3ltk","payload":{"label":"Upload my Resume","actions":[]}}}');
   event.target.parentElement.remove();
   fetch(
     `https://${voiceflowRuntime}/public/${voiceflowProjectID}/state/user/${uniqueId}/interact`,
@@ -540,7 +541,7 @@ function addAssistantMsg(element) {
   assistantMsg.appendChild(assistantWrapper);
 
   chatWindow.appendChild(assistantMsg);
-  localStorage.setItem("messages", chatWindow.innerHTML);
+  localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
 }
 
 function addUserMsg(userInput) {
@@ -565,7 +566,7 @@ function addUserMsg(userInput) {
   userMsg.appendChild(userWrapper);
 
   chatWindow.appendChild(userMsg);
-  localStorage.setItem("messages", chatWindow.innerHTML);
+  localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
 }
 
 function createForm(dataObject) {
@@ -644,7 +645,7 @@ function updateData(formData) {
     document
       .querySelector(".userdetailsform")
       .parentElement.parentElement.remove();
-    localStorage.setItem("messages", chatWindow.innerHTML);
+    localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
     interact({ type: "done", payload: null });
 
     resolve("");
@@ -688,6 +689,10 @@ function updateLocationCards(stateData) {
 
       jQuery(cardId).find("h1").text(scoreInfo.stateName);
       jQuery(cardId).parent().css("background-image", url);
+      jQuery(cardId)
+        .find(".lf_overall")
+        .find(".score-inner")
+        .text(scoreInfo.overall);
       // Update the corresponding modal with state and stateBlurb
       jQuery(modalId).find(".lf_state").text(scoreInfo.stateName);
       jQuery(modalId).find(".lf_blurb").text(scoreInfo.stateBlurb);
@@ -695,12 +700,14 @@ function updateLocationCards(stateData) {
       jQuery(modalId).find(".lf_bg_img").css("background-image", url);
       // Update other scores for the modal
       const scores = [
-        "amenities",
-        "livability",
-        "commute",
+        "publicTransportation",
+        "healthcare",
         "entertainment",
+        "fitness",
+        "parks",
+        "retail",
+        "food",
         "education",
-        "childcare",
       ];
       scores.forEach((score) => {
         if (scoreInfo[score] !== undefined) {
@@ -738,19 +745,21 @@ function updateLocationCards(stateData) {
       // jQuery(modalId).find(".hosp_map");
       // window[`map_${index + 1}`];
       stateInfo.hospitalsByState.HospitalDetails.forEach((hospital) => {
-        //   console.log([hospital.fields.Longitude, hospital.fields.Latitude])
-        new mapboxgl.Marker()
-          .setLngLat([hospital.fields.Longitude, hospital.fields.Latitude])
-          .setPopup(
-            new mapboxgl.Popup().setHTML(
-              `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.URL}">Visit Site</a></span`
-            )
-          ) // add popup
-          .addTo(window[`map_gl_${index + 1}`]);
-        window[`bounds_gl_${index + 1}`].extend([
-          hospital.fields.Longitude,
-          hospital.fields.Latitude,
-        ]);
+        if (hospital.fields.Longitude && hospital.fields.Latitude) {
+          //   console.log([hospital.fields.Longitude, hospital.fields.Latitude])
+          new mapboxgl.Marker()
+            .setLngLat([hospital.fields.Longitude, hospital.fields.Latitude])
+            .setPopup(
+              new mapboxgl.Popup().setHTML(
+                `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.URL}">Visit Site</a></span`
+              )
+            ) // add popup
+            .addTo(window[`map_gl_${index + 1}`]);
+          window[`bounds_gl_${index + 1}`].extend([
+            hospital.fields.Longitude,
+            hospital.fields.Latitude,
+          ]);
+        }
       });
       window[`map_gl_${index + 1}`].fitBounds(
         window[`bounds_gl_${index + 1}`],

@@ -1,14 +1,15 @@
+const voiceflowProjectID = "658b0695baf097cb1c85f6d1";
+const proxyAPIKey = "ihj-external-prod"; // External Production
+const localStorageMsgs = "ihj-ext-messages";
+
 const typingIndicator = document.getElementById("typing-indicator");
 const uniqueId = generateUniqueId();
 // const voiceflowRuntime = "general-runtime.voiceflow.com";
-const voiceflowRuntime = "ihj-proxy-daniel467.replit.app";
+const voiceflowRuntime = "ihjproxy.replit.app";
 const voiceflowVersionID =
   document.getElementById("vfassistant").getAttribute("data-version") ||
   "production";
 
-const proxyAPIKey = "ihj-external-prod";
-const voiceflowProjectID = "658b0695baf097cb1c85f6d1";
-const localStorageMsgs = "ihj-ext-messages";
 
 const chatWindow = document.getElementById("chat-window");
 const input = document.getElementById("user-input");
@@ -19,7 +20,7 @@ const savedMessages = localStorage.getItem(localStorageMsgs);
 const chatContainer = document.getElementById("chat-container");
 const restartButton = document.getElementById("restart-button");
 
-const assistantTag = "InHealth Jobs",
+const assistantTag = "Career Doc",
   userTag = "You";
 
 async function fetchVoiceflowVariables(uniqueId) {
@@ -56,151 +57,138 @@ async function storeSpecificVoiceflowVariablesInLocalStorage(uniqueId) {
   });
 }
 
-function displayResponse(response) {
-  setTimeout(() => {
-    if (response) {
-      response.forEach((item, index, array) => {
-        let hasLearnMoreButton =
-          item.type === "choice" &&
-          item.payload.buttons.some((button) => button.name === "Learn More");
+async function displayResponse(response) {
+  if (!response || !response.length) {
+    return;
+  }
 
-        if (hasLearnMoreButton) {
-          // Fetch and store specific variables when 'Learn More' is present
-          storeSpecificVoiceflowVariablesInLocalStorage(uniqueId);
-        }
+  for (let i = 0; i < response.length; i++) {
+    const item = response[i];
 
-        if (item.type === "speak" || item.type === "text") {
-          // const taglineElement = document.createElement("div");
-          // taglineElement.classList.add("assistanttagline");
-          // taglineElement.textContent = "InHealth Jobs";
-
-          // chatWindow.appendChild(assistantTagLine);
-
-          // const assistantWrapper = document.createElement("div");
-          // assistantWrapper.classList.add("assistantwrapper");
-
-          // const assistantImage = document.createElement("div");
-          // assistantImage.classList.add("assistantimage");
-          // assistantWrapper.appendChild(assistantImage);
-
-          const messageElement = document.createElement("div");
-          messageElement.classList.add("message", "assistant");
-
-          const paragraphs = item.payload.message.split("\n\n");
-          const wrappedMessage = paragraphs
-            .map((para) => `<p>${para}</p>`)
-            .join("");
-
-          messageElement.innerHTML = wrappedMessage;
-
-          // assistantWrapper.appendChild(messageElement);
-          // chatWindow.appendChild(assistantWrapper);
-
-          addAssistantMsg(messageElement);
-        } else if (item.type === "choice") {
-          const buttonContainer = document.createElement("div");
-          buttonContainer.classList.add("buttoncontainer");
-
-          item.payload.buttons.forEach((button) => {
-            const buttonElement = document.createElement("button");
-            buttonElement.classList.add("assistant", "message", "button");
-            buttonElement.textContent = button.name;
-            if (button.name === "Learn More") {
-              buttonElement.addEventListener("click", () => {
-                const lightboxModal = document.getElementById("lightbox-modal");
-                if (lightboxModal) {
-                  lightboxModal.style.display = "flex";
-                  lightboxModal.style.opacity = "100";
-                }
-              });
-            }
-
-            buttonElement.dataset.key = button.request.type;
-            buttonElement.addEventListener("click", (event) => {
-              handleButtonClick(event);
-            });
-            buttonContainer.appendChild(buttonElement);
-          });
-          chatWindow.appendChild(buttonContainer);
-          localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
-        } else if (item.type === "visual") {
-          console.info("Image Step");
-
-          const imageElement = document.createElement("img");
-          imageElement.src = item.payload.image;
-          imageElement.alt = "Assistant Image";
-          imageElement.style.width = "100%";
-
-          addAssistantMsg(imageElement);
-
-          // chatWindow.appendChild(imageElement);
-        } else if (item.type === "upload_resume") {
-          const uppyElement = document.createElement("div");
-          uppyElement.id = "uppyElement";
-          uppyElement.style.flex = 1;
-          // uppyElement.classList.add("assistantwrapper");
-
-          // chatWindow.appendChild(assistantTagLine);
-          // chatWindow.appendChild(uppyElement);
-          addAssistantMsg(uppyElement);
-
-          uppy = new Uppy.Uppy({
-            autoProceed: true,
-            allowMultipleUploadBatches: false,
-            debug: false,
-            restrictions: {
-              allowedFileTypes: [".pdf"],
-            },
-          });
-          uppy
-            .use(Uppy.Dashboard, {
-              target: "#uppyElement",
-              inline: true,
-              proudlyDisplayPoweredByUppy: false,
-            })
-            .use(Uppy.XHRUpload, {
-              endpoint: "https://inj-cv-parser.adabeer445.repl.co/extract_text",
-              fieldName: "file",
-            });
-          uppy.on("upload-success", async (file, response) => {
-            // Parse the response body as JSON
-            console.log(file);
-            console.log(response);
-            await updateVariable(
-              "resume",
-              response.body.text.replaceAll("\n", " ")
-            );
-            uppy.clearUploadedFiles();
-            uppy.close();
-            uppyElement.parentElement.parentElement.remove();
-            interact({ type: "done", payload: null });
-            // console.log(uppy);
-          });
-        } else if (item.type === "user_form") {
-          addAssistantMsg(createForm(item.payload));
-          // addAssistantMsg(element);
-        } else if (item.type === "custom_locations") {
-          // item.payload
-          updateLocationCards(item.payload);
-        }
-
-        // After processing the last item, check for the specific message
-        if (index === array.length - 1) {
-          checkAndDisplayLocationContainer();
-        }
-      });
-    }
-
+    await new Promise((resolve) =>
+      setTimeout(resolve, item.payload.delay || 250)
+    );
     typingIndicator.classList.add("hidden");
 
-    window.requestAnimationFrame(() => {
-      setTimeout(() => {
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-      }, 100);
-    });
+    // let hasLearnMoreButton =
+    //   item.type === "choice" &&
+    //   item.payload.buttons.some((button) => button.name === "Learn More");
 
-    responseContainer.style.opacity = "1";
-  }, 250);
+    // if (hasLearnMoreButton) {
+    //   // Fetch and store specific variables when 'Learn More' is present
+    //   storeSpecificVoiceflowVariablesInLocalStorage(uniqueId);
+    // }
+
+    if (item.type === "speak" || item.type === "text") {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message", "assistant");
+
+      const paragraphs = item.payload.message.split("\n\n");
+      const wrappedMessage = paragraphs
+        .map((para) => `<p>${para}</p>`)
+        .join("");
+
+      messageElement.innerHTML = wrappedMessage;
+
+      addAssistantMsg(messageElement);
+    } else if (item.type === "choice") {
+      const buttonContainer = document.createElement("div");
+      buttonContainer.classList.add("buttoncontainer");
+
+      item.payload.buttons.forEach((button) => {
+        const buttonElement = document.createElement("button");
+        buttonElement.classList.add("assistant", "message", "button");
+        buttonElement.textContent = button.name;
+        if (button.name === "Learn More") {
+          buttonElement.addEventListener("click", () => {
+            const lightboxModal = document.getElementById("lightbox-modal");
+            if (lightboxModal) {
+              lightboxModal.style.display = "flex";
+              lightboxModal.style.opacity = "100";
+            }
+          });
+        }
+
+        buttonElement.dataset.key = button.request.type;
+        buttonElement.addEventListener("click", (event) => {
+          handleButtonClick(event);
+        });
+        buttonContainer.appendChild(buttonElement);
+      });
+      chatWindow.appendChild(buttonContainer);
+      localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
+    } else if (item.type === "visual") {
+      console.info("Image Step");
+
+      const imageElement = document.createElement("img");
+      imageElement.src = item.payload.image;
+      imageElement.alt = "Assistant Image";
+      imageElement.style.width = "100%";
+
+      addAssistantMsg(imageElement);
+
+      // chatWindow.appendChild(imageElement);
+    } else if (item.type === "upload_resume") {
+      const uppyElement = document.createElement("div");
+      uppyElement.id = "uppyElement";
+      uppyElement.style.flex = 1;
+      // uppyElement.classList.add("assistantwrapper");
+
+      // chatWindow.appendChild(assistantTagLine);
+      // chatWindow.appendChild(uppyElement);
+      addAssistantMsg(uppyElement);
+
+      uppy = new Uppy.Uppy({
+        autoProceed: true,
+        allowMultipleUploadBatches: false,
+        debug: false,
+        restrictions: {
+          allowedFileTypes: [".pdf"],
+        },
+      });
+      uppy
+        .use(Uppy.Dashboard, {
+          target: "#uppyElement",
+          inline: true,
+          proudlyDisplayPoweredByUppy: false,
+        })
+        .use(Uppy.XHRUpload, {
+          endpoint: "https://inj-cv-parser.adabeer445.repl.co/extract_text",
+          fieldName: "file",
+        });
+      uppy.on("upload-success", async (file, response) => {
+        // Parse the response body as JSON
+        console.log(file);
+        console.log(response);
+        await updateVariable(
+          "resume",
+          response.body.text.replaceAll("\n", " ")
+        );
+        uppy.clearUploadedFiles();
+        uppy.close();
+        uppyElement.parentElement.parentElement.remove();
+        interact({ type: "done", payload: null });
+        // console.log(uppy);
+      });
+    } else if (item.type === "user_form") {
+      addAssistantMsg(createForm(item.payload));
+      // addAssistantMsg(element);
+    } else if (item.type === "custom_locations") {
+      updateLocationCards(item.payload);
+    } else if (item.type === "save_variables") {
+      // console.log(item.payload);
+      localStorage.setItem("ihjMem", JSON.stringify(item.payload));
+    }
+  }
+
+
+  window.requestAnimationFrame(() => {
+    setTimeout(() => {
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }, 100);
+  });
+
+  responseContainer.style.opacity = "1";
 
   setTimeout(() => {
     input.disabled = false;
@@ -210,25 +198,6 @@ function displayResponse(response) {
     input.focus();
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }, 200);
-}
-
-function checkAndDisplayLocationContainer() {
-  const assistantMessages = document.querySelectorAll(".message.assistant");
-  assistantMessages.forEach((messageDiv) => {
-    const paragraphs = messageDiv.querySelectorAll("p");
-    paragraphs.forEach((p) => {
-      if (p.textContent.startsWith("Here are my top 3 recommendations")) {
-        var locationContainer = document.getElementById("location-container");
-        if (locationContainer) {
-          locationContainer.style.display = "block";
-          messageDiv.parentNode.insertAdjacentElement(
-            "afterend",
-            locationContainer
-          );
-        }
-      }
-    });
-  });
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -351,11 +320,6 @@ async function interact(action) {
     config: { tts: true, stripSSML: true },
     action: action,
   };
-  // let body = {
-  //   config: { tts: true, stripSSML: true },
-  //   action: { type: "text", payload: input },
-  // };
-
   // If input is #launch# > Use a launch action to the request body
   if (action == "#launch#") {
     body = {
@@ -383,45 +347,34 @@ async function interact(action) {
 }
 
 function handleButtonClick(event) {
-  // Log the button name as a user message
-  // const userMessageElement = document.createElement("div");
-
-  // const prevMessage = chatWindow.lastElementChild;
-  // if (!prevMessage || !prevMessage.classList.contains("user")) {
-  //   const userTaglineElement = document.createElement("div");
-  //   userTaglineElement.classList.add("usertagline");
-  //   userTaglineElement.textContent = "You";
-  //   chatWindow.appendChild(userTaglineElement);
-  // }
-
-  // const userWrapper = document.createElement("div");
-  // userWrapper.classList.add("userwrapper");
-
-  // const userImage = document.createElement("div");
-  // userImage.classList.add("userimage");
-  // userWrapper.appendChild(userImage);
-
-  // userMessageElement.classList.add("message", "user");
-  // userMessageElement.textContent = event.target.textContent;
-  // userWrapper.appendChild(userMessageElement);
-
-  // chatWindow.appendChild(userWrapper);
-
   addUserMsg(event.target.textContent);
-  let body = { request: { type: event.target.dataset.key } };
-  event.target.parentElement.remove();
-  fetch(`https://${voiceflowRuntime}/state/user/${uniqueId}/interact/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-client-id": proxyAPIKey,
-      versionID: voiceflowVersionID,
+  typingIndicator.classList.remove("hidden");
+  chatWindow.appendChild(typingIndicator);
+  let body = {
+    action: {
+      type: event.target.dataset.key,
+      payload: { label: event.target.textContent, actions: [] },
     },
-    body: JSON.stringify(body),
-  })
+  };
+  event.target.parentElement.remove();
+  fetch(
+    `https://${voiceflowRuntime}/public/${voiceflowProjectID}/state/user/${uniqueId}/interact`,
+    {
+      //   fetch(`https://${voiceflowRuntime}/state/user/${uniqueId}/interact/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        //   Authorization: voiceflowAPIKey,
+        versionID: voiceflowVersionID,
+        sessionid: uniqueId,
+        "x-client-id": proxyAPIKey,
+      },
+      body: JSON.stringify(body),
+    }
+  )
     .then((response) => response.json())
     .then((data) => {
-      displayResponse(data);
+      displayResponse(data.trace);
     })
     .catch((err) => {
       // console.error(err)
@@ -756,3 +709,22 @@ function updateLocationCards(stateData) {
   locationCards.style.display = "block";
   addAssistantMsg(locationCards);
 }
+
+// modal_1,modal_2,modal_3
+// jQuery("#modal_3").find(".lf_livability").find(".score-inner").text("26");
+// jQuery("#modal_3")
+//   .find(".lf_livability")
+//   .find(".score-inner")
+//   .css("width", "calc(100% * (26  / 100))");
+
+// lf_state   jQuery("#modal_3").find(".lf_state").text("26")
+// lf_blurb   jQuery("#modal_3").find(".lf_blurb").text("26")
+// lf_bg_img
+// lf_livability
+// lf_commute
+// lf_education
+// lf_amenities
+// lf_entertainment
+// lf_childcare
+// lf_doc_count
+// lf_speciality
