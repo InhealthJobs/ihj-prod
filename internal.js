@@ -644,7 +644,7 @@ function updateData(formData) {
     updateTextContent(customFields);
     document
       .querySelector(".userdetailsform")
-      .parentElement.parentElement.remove();
+      ?.parentElement.parentElement.remove();
     localStorage.setItem(localStorageMsgs, chatWindow.innerHTML);
     interact({ type: "done", payload: null });
 
