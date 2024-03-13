@@ -1,4 +1,4 @@
-const voiceflowProjectID = "65b27cc1a1218d6daa2f54c7";
+const voiceflowProjectID = "65f1ed59f447068e8a637743";
 const proxyAPIKey = "ihj-external-prod"; // External Production
 const localStorageMsgs = "ihj-ext-messages";
 
