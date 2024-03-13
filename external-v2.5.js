@@ -4,12 +4,8 @@ const localStorageMsgs = "ihj-ext-messages";
 
 const typingIndicator = document.getElementById("typing-indicator");
 const uniqueId = generateUniqueId();
-// const voiceflowRuntime = "general-runtime.voiceflow.com";
 const voiceflowRuntime = "ihjproxy.replit.app";
-const voiceflowVersionID =
-  document.getElementById("vfassistant").getAttribute("data-version") ||
-  "production";
-
+const voiceflowVersionID = document.getElementById("vfassistant").getAttribute("data-version") || "production";
 
 const chatWindow = document.getElementById("chat-window");
 const input = document.getElementById("user-input");
@@ -19,6 +15,7 @@ const inputFieldContainer = document.getElementById("input-container");
 const savedMessages = localStorage.getItem(localStorageMsgs);
 const chatContainer = document.getElementById("chat-container");
 const restartButton = document.getElementById("restart-button");
+const locationCards = document.getElementById("location-container");
 
 const assistantTag = "Career Doc",
   userTag = "You";
@@ -548,6 +545,7 @@ function updateTextContent(customFields) {
     }
   }
 }
+
 function autoFillSignupForm() {
   // Retrieve variables from local storage
   const firstName = localStorage.getItem("first_name");
@@ -659,50 +657,50 @@ function updateLocationCards(stateData) {
       });
     }
 
-    if (
-      stateInfo.physiciansByStateAndSpecialty &&
-      stateInfo.physiciansByStateAndSpecialty.records &&
-      stateInfo.physiciansByStateAndSpecialty.records.length > 0
-    ) {
-      jQuery(modalId)
-        .find(".lf_speciality")
-        .text(
-          stateInfo.physiciansByStateAndSpecialty.records[0].fields.Specialty
-        );
-      jQuery(modalId)
-        .find(".lf_doc_count")
-        .text(stateInfo.physiciansByStateAndSpecialty.records[0].fields.Count);
-    }
-    if (
-      stateInfo.hospitalsByState &&
-      stateInfo.hospitalsByState.HospitalDetails &&
-      stateInfo.hospitalsByState.HospitalDetails.length > 0
-    ) {
-      // jQuery(modalId).find(".hosp_map");
-      // window[`map_${index + 1}`];
-      stateInfo.hospitalsByState.HospitalDetails.forEach((hospital) => {
-        //   console.log([hospital.fields.Longitude, hospital.fields.Latitude])
-        new mapboxgl.Marker()
-          .setLngLat([hospital.fields.Longitude, hospital.fields.Latitude])
-          .setPopup(
-            new mapboxgl.Popup().setHTML(
-              `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.URL}">Visit Site</a></span`
-            )
-          ) // add popup
-          .addTo(window[`map_gl_${index + 1}`]);
-        window[`bounds_gl_${index + 1}`].extend([
-          hospital.fields.Longitude,
-          hospital.fields.Latitude,
-        ]);
-      });
-      window[`map_gl_${index + 1}`].fitBounds(
-        window[`bounds_gl_${index + 1}`],
-        {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          maxZoom: 15,
-        }
-      );
-    }
+    // if (
+    //   stateInfo.physiciansByStateAndSpecialty &&
+    //   stateInfo.physiciansByStateAndSpecialty.records &&
+    //   stateInfo.physiciansByStateAndSpecialty.records.length > 0
+    // ) {
+    //   jQuery(modalId)
+    //     .find(".lf_speciality")
+    //     .text(
+    //       stateInfo.physiciansByStateAndSpecialty.records[0].fields.Specialty
+    //     );
+    //   jQuery(modalId)
+    //     .find(".lf_doc_count")
+    //     .text(stateInfo.physiciansByStateAndSpecialty.records[0].fields.Count);
+    // }
+    // if (
+    //   stateInfo.hospitalsByState &&
+    //   stateInfo.hospitalsByState.HospitalDetails &&
+    //   stateInfo.hospitalsByState.HospitalDetails.length > 0
+    // ) {
+    //   // jQuery(modalId).find(".hosp_map");
+    //   // window[`map_${index + 1}`];
+    //   stateInfo.hospitalsByState.HospitalDetails.forEach((hospital) => {
+    //     //   console.log([hospital.fields.Longitude, hospital.fields.Latitude])
+    //     new mapboxgl.Marker()
+    //       .setLngLat([hospital.fields.Longitude, hospital.fields.Latitude])
+    //       .setPopup(
+    //         new mapboxgl.Popup().setHTML(
+    //           `<span class='hosp_name'>${hospital.fields["Hospital Name"]}<br><a href="${hospital.URL}">Visit Site</a></span`
+    //         )
+    //       ) // add popup
+    //       .addTo(window[`map_gl_${index + 1}`]);
+    //     window[`bounds_gl_${index + 1}`].extend([
+    //       hospital.fields.Longitude,
+    //       hospital.fields.Latitude,
+    //     ]);
+    //   });
+    //   window[`map_gl_${index + 1}`].fitBounds(
+    //     window[`bounds_gl_${index + 1}`],
+    //     {
+    //       padding: { top: 50, bottom: 50, left: 50, right: 50 },
+    //       maxZoom: 15,
+    //     }
+    //   );
+    // }
   });
 
   // chatWindow.appendChild(locationCards)
@@ -726,5 +724,7 @@ function updateLocationCards(stateData) {
 // lf_amenities
 // lf_entertainment
 // lf_childcare
+// lf_doc_count
+// lf_speciality
 // lf_doc_count
 // lf_speciality
